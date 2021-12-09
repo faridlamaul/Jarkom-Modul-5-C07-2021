@@ -16,13 +16,13 @@ Pertama - tama buat topologi pada GNS3 seperti pada gambar berikut :
 
 Keterangan :
 
--   DORIKI adalah DNS Server
--   JIPANGU adalah DHCP Server
--   MAINGATE dan JORGE adalah Web Server
--   Jumlah Host pada BLUENO adalah 100 host
--   Jumlah Host pada CIPHER adalah 700 host
--   Jumlah Host pada ELENA adalah 300 host
--   Jumlah Host pada FUKUROU adalah 200 host
+- DORIKI adalah DNS Server
+- JIPANGU adalah DHCP Server
+- MAINGATE dan JORGE adalah Web Server
+- Jumlah Host pada BLUENO adalah 100 host
+- Jumlah Host pada CIPHER adalah 700 host
+- Jumlah Host pada ELENA adalah 300 host
+- Jumlah Host pada FUKUROU adalah 200 host
 
 ## VLSM
 
@@ -64,49 +64,49 @@ Dengan demikian, didapatkan NID untuk masing - masing subnet sebagai berikut :
 
 Masing - masing interface pada sebuah subnet dapat diberikan IP sesuai dengan aturan yang telah diberikan di atas.
 
--   FOOSHA
+- FOOSHA
 
-    ![0.4](images/0.4.png)
+  ![0.4](images/0.4.png)
 
--   WATER7
+- WATER7
 
-    ![0.5](images/0.5.png)
+  ![0.5](images/0.5.png)
 
--   GUANHAO
+- GUANHAO
 
-    ![0.6](images/0.6.png)
+  ![0.6](images/0.6.png)
 
--   DORIKI
+- DORIKI
 
-    ![0.7](images/0.7.png)
+  ![0.7](images/0.7.png)
 
--   JIPANGU
+- JIPANGU
 
-    ![0.8](images/0.8.png)
+  ![0.8](images/0.8.png)
 
--   JORGE
+- JORGE
 
-    ![0.9](images/0.9.png)
+  ![0.9](images/0.9.png)
 
--   MAINGATE
+- MAINGATE
 
-    ![0.10](images/0.10.png)
+  ![0.10](images/0.10.png)
 
--   BLUENO
+- BLUENO
 
-    ![0.11](images/0.11.png)
+  ![0.11](images/0.11.png)
 
--   CIPHER
+- CIPHER
 
-    ![0.12](images/0.12.png)
+  ![0.12](images/0.12.png)
 
--   ELENA
+- ELENA
 
-    ![0.13](images/0.13.png)
+  ![0.13](images/0.13.png)
 
--   FUKUROU
+- FUKUROU
 
-    ![0.14](images/0.14.png)
+  ![0.14](images/0.14.png)
 
 Setelah itu lakukan routing pada router **FOOSHA** sebagai berikut :
 
@@ -182,3 +182,105 @@ Untuk testingnya, lakukan perintah `nmap -p 80 192.187.0.10` pada client. Disini
 ![0.23](images/0.23.png)
 
 Kalau nanti outputnya port 80 `filtered` berarti berhasil `iptables`-nya.
+
+## Soal 5
+
+```
+Akses dari subnet Elena dan Fukuro hanya diperbolehkan pada pukul 15.01 hingga pukul 06.59 setiap harinya.
+```
+
+### Jawaban
+
+Masukkan perintah - perintah iptables berikut pada **Doriki**
+
+```
+iptables -A INPUT -s 192.187.2.0/23 -m time --timestart 15:01 --timestop 23:59 -j ACCEPT
+iptables -A INPUT -s 192.187.2.0/23 -m time --timestart 00:00 --timestop 06:59 -j ACCEPT
+iptables -A INPUT -s 192.187.2.0/23 -j REJECT
+```
+
+### Testing
+
+- Pada salah satu node client yang ada pada soal, pertama - tama periksa dahulu waktu sistem saat ini. Node yang dipilih kali ini adalah Elena.
+
+  ```
+  date
+  ```
+
+  ![5.1](images/5.1.PNG)
+
+- Terlihat bahwa waktu saat ini masuk kedalam jam kerja node Doriki untuk subnet Elena (15:01 - 23:59), sehingga ping berhasil dilakukan. Untuk melakukan ping ke node Doriki, jalankan perintah berikut.
+
+  ```
+  ping 192.187.0.10
+  ```
+
+  ![5.2](images/5.2.PNG)
+
+- Untuk mengetes lebih lanjut, ubah waktu sistem saat ini menjadi diluar waktu kerja node Doriki dengan perintah berikut.
+
+  ```
+  date -s "Mon Dec  6 08:36:18 UTC 2021"
+  ```
+
+  ![5.3](images/5.3.PNG)
+
+- Setelah itu, lakukan ping kembali ke node Doriki. Terlihat bahwa Doriki tidak dapat diakses oleh subnet Elena. Artinya, aturan iptables yang diterapkan sudah sukses.
+
+  ![5.4](images/5.4.PNG)
+
+# Soal 6
+
+```
+Karena kita memiliki 2 Web Server, Luffy ingin Guanhao disetting sehingga setiap request dari client yang mengakses DNS Server akan didistribusikan secara bergantian pada Jorge dan Maingate.
+```
+
+### Jawaban
+
+Masukkan perintah - perintah iptables berikut pada **Guanhao**
+
+```
+iptables -A PREROUTING -t nat -d 192.187.0.10 -p tcp -m statistic --mode nth --every 2 --packet 0 -j DNAT --to-destination 192.187.0.18
+iptables -A PREROUTING -t nat -d 192.187.0.10 -p tcp -j DNAT --to-destination 192.187.0.19
+```
+
+### Testing
+
+- Pertama - tama, pada kedua node web server, yaitu pada _Jipangu_ dan _Maingate_, install service apache dengan menjalankan perintah berikut.
+
+  ```
+    apt-get update
+    apt-get install apache2 -y
+  ```
+
+- Setelah berhasil diinstall, edit file _/var/www/html/index.html_ pada kedua node menjadi seperti pada gamber berikut. (Sesuaikan nama node-nya).
+
+  - Maingate
+
+  ![6.1](images/6.1.PNG)
+
+  - Jorge
+
+  ![6.2](images/6.2.PNG)
+
+- Kemudian restart service apache pada kedua node web server dengan menggunakan perintah :
+
+  ```
+  service apache2 restart
+  ```
+
+- Setelah kedua web server berhasil disiapkan, coba akses ke node Doriki (DNS Server) lewat salah satu node yang berhubungan langsung dengan router **Guanhao** (pada kasus ini digunakan node Elena) dengan menggunakan perintah :
+
+  ```
+  curl 192.187.0.10
+  ```
+
+  ![6.3](images/6.3.PNG)
+
+- Terlihat pada percobaan pertama akses ke Doriki (DNS Server), paket dialihkan ke node Web Server Jorge. Coba akses lagi ke node Doriki (DNS Server) dengan menggunakan perintah yang sama dengan yang diatas.
+
+  ![6.4](images/6.4.PNG)
+
+- Terlihat bahwa akses ke Doriki sekarang dialihkan ke node Web Server Maingate. Jika dicoba terus menerus akses ke Doriki, maka paket akan terus menerus dialihkan secara bergantian ke Jorge atau Maingate. Dengan begitu, artinya konfigurasi yang diinginkan telah berhasil diterapkan.
+
+  ![6.5](images/6.5.PNG)
