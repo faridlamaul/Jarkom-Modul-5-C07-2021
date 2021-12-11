@@ -183,6 +183,66 @@ Untuk testingnya, lakukan perintah `nmap -p 80 192.187.0.10` pada client. Disini
 
 Kalau nanti outputnya port 80 `filtered` berarti berhasil `iptables`-nya.
 
+## Soal 3
+
+```
+Karena kelompok kalian maksimal terdiri dari 3 orang. Luffy meminta kalian untuk membatasi DHCP dan DNS Server hanya boleh menerima maksimal 3 koneksi ICMP secara bersamaan menggunakan iptables, selebihnya didrop.
+```
+
+### Jawaban
+
+Masukkan perintah iptables berikut pada **Doriki dan Jipangu**
+
+```
+iptables -A INPUT -p icmp -m connlimit --connlimit-above 3 --connlimit-mask 0 -j DROP
+```
+
+### Testing
+
+Lakukan PING pada semua host yang ada secara bersamaan. Host terakhir yang dilakukan ping tidak akan bisa.
+
+### Blueno
+
+![31](https://user-images.githubusercontent.com/77373958/145673429-ee65221c-5b74-4b0e-8f36-a42c623518f0.PNG)
+
+### Fukuro
+
+![33](https://user-images.githubusercontent.com/77373958/145673438-00e61e77-280a-4c44-bf7d-e8e3ed7e1840.PNG)
+
+### Elena 
+
+![32](https://user-images.githubusercontent.com/77373958/145673435-178059e8-0113-4767-b4d5-2af12522bf12.PNG)
+
+### Ciper
+
+![34](https://user-images.githubusercontent.com/77373958/145673439-8e78dc0a-6837-4d77-aa46-a873f979ffaf.PNG)
+
+## Soal 4
+
+```
+Akses dari subnet Blueno dan Cipher hanya diperbolehkan pada pukul 07.00 - 15.00 pada hari Senin sampai Kamis.
+```
+
+Masukkan perintah iptables berikut ke **Doriki**
+
+```
+iptables -A INPUT -s 192.187.0.128/25 -m time --timestart 07:00 --timestop 1
+iptables -A INPUT -s 192.187.0.128/25 -j REJECT
+```
+
+```
+iptables -A INPUT -s 192.187.4.0/22 -m time --timestart 07:00 --timestop 15:
+iptables -A INPUT -s 192.187.4.0/22 -j REJECT
+```
+
+### Testing
+
+Testing dilakukan pada host Blueno dan Ciper dengan melakukan ping ke Doriki, hasilnya tidak akan bisa.
+
+![41](https://user-images.githubusercontent.com/77373958/145673587-4ea5cd16-f43b-4339-9e11-2e928ecd67d8.PNG)
+
+![42](https://user-images.githubusercontent.com/77373958/145673589-ead7a111-a476-4849-8d3f-de92a9c76086.PNG)
+
 ## Soal 5
 
 ```
